@@ -1,0 +1,23 @@
+2025-05-13 16:31:59 - app.core.error_handling - INFO - error_handling:register_exception_handlers:50 - Custom exception handlers registered.
+2025-05-13 16:43:32 - app.core.error_handling - INFO - error_handling:register_exception_handlers:50 - Custom exception handlers registered.
+2025-05-13 16:48:49 - app.core.error_handling - INFO - error_handling:register_exception_handlers:50 - Custom exception handlers registered.
+2025-05-13 16:48:49 - app - INFO - __init__:startup_event:73 - Starting My Enterprise App v1.0.0
+2025-05-13 16:49:58 - app - INFO - __init__:shutdown_event:78 - Shutting down My Enterprise App
+2025-05-13 16:50:00 - app.core.error_handling - INFO - error_handling:register_exception_handlers:50 - Custom exception handlers registered.
+2025-05-13 16:50:00 - app - INFO - __init__:startup_event:73 - Starting My Enterprise App v1.0.0
+2025-05-13 16:52:31 - app - INFO - __init__:shutdown_event:78 - Shutting down My Enterprise App
+2025-05-13 16:52:33 - app.core.error_handling - INFO - error_handling:register_exception_handlers:50 - Custom exception handlers registered.
+2025-05-13 16:52:33 - app - INFO - __init__:startup_event:73 - Starting My Enterprise App v1.0.0 (development)
+2025-05-13 16:53:18 - app - INFO - __init__:shutdown_event:78 - Shutting down My Enterprise App
+2025-05-13 16:53:21 - app.core.error_handling - INFO - error_handling:register_exception_handlers:50 - Custom exception handlers registered.
+2025-05-13 16:53:21 - app - INFO - __init__:startup_event:73 - Starting My Enterprise App v1.0.0 (development)
+2025-05-13 16:53:31 - app.core.error_handling - ERROR - error_handling:http_exception_handler:12 - HTTPException: 404 Not Found for GET /favicon.ico
+2025-05-13 16:53:36 - app.core.error_handling - ERROR - error_handling:http_exception_handler:12 - HTTPException: 404 Not Found for GET /about
+2025-05-13 16:53:57 - app - INFO - __init__:shutdown_event:78 - Shutting down My Enterprise App
+2025-05-14 15:53:05 - app.core.error_handling - INFO - error_handling:register_exception_handlers:50 - Custom exception handlers registered.
+2025-05-14 15:53:05 - app - INFO - __init__:startup_event:73 - Starting My Enterprise App v1.0.0 (development)
+2025-05-14 15:53:08 - app.core.error_handling - ERROR - error_handling:http_exception_handler:12 - HTTPException: 404 Not Found for GET /favicon.ico
+2025-05-14 16:05:59 - app.core.error_handling - ERROR - error_handling:http_exception_handler:12 - HTTPException: 404 Not Found for GET /about
+2025-05-14 16:19:46 - app - INFO - __init__:shutdown_event:78 - Shutting down My Enterprise App
+2025-05-14 16:19:53 - app.core.error_handling - INFO - error_handling:register_exception_handlers:50 - Custom exception handlers registered.
+2025-05-14 16:19:53 - app - INFO - __init__:startup_event:73 - Starting My Enterprise App v1.0.0 (development)

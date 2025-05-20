@@ -1,0 +1,26 @@
+# fly.toml file generated for Python FastAPI applications
+
+app = "your-app-name" # Will be replaced during deployment
+primary_region = "sin" # Choose a region close to you or your users
+kill_signal = "SIGINT"
+kill_timeout = 5
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8000"
+  HOST = "0.0.0.0"
+
+[http_service]
+  internal_port = 8000 # Must match the port your app listens on inside the container
+  force_https = true
+  auto_stop_machines = true # Automatically stop machines when idle to save costs
+  auto_start_machines = true # Automatically start machines when requests come in
+  min_machines_running = 0 # Set to 0 to minimize costs
+  processes = ["app"]
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256 # Adjust based on your app's needs
