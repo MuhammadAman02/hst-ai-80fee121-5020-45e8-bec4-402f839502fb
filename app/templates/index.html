@@ -1,9 +1,104 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skin Tone Color Analyzer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #imagePreview, #resultImage {
+            max-width: 100%;
+            margin-top: 20px;
+        }
+        #colorCombinations {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .color-box {
+            width: 50px;
+            height: 50px;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Skin Tone Color Analyzer</h1>
+    <input type="file" id="imageUpload" accept="image/*">
+    <button onclick="analyzeImage()">Analyze Image</button>
+    <div>
+        <h2>Change Skin Tone:</h2>
+        <button onclick="changeSkinTone('darker')">Darker</button>
+        <button onclick="changeSkinTone('lighter')">Lighter</button>
+    </div>
+    <img id="imagePreview">
+    <div id="result"></div>
+    <div id="colorCombinations"></div>
+    <img id="resultImage">
 
-{% block title %}Home - My Application{% endblock %}
+    <script>
+        async function analyzeImage() {
+            const fileInput = document.getElementById('imageUpload');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Please select an image first.');
+                return;
+            }
 
-{% block content %}
-    <h1>Hello, FastAPI!</h1>
-    <p>Welcome to your new FastAPI application, built using our world-class template foundation!</p>
-    <p>Current time: {{ current_time }}</p>
-{% endblock %}
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch('/analyze', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            displayResult(result);
+        }
+
+        async function changeSkinTone(newTone) {
+            const fileInput = document.getElementById('imageUpload');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Please select an image first.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('new_tone', newTone);
+
+            const response = await fetch('/change_skin_tone', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            document.getElementById('resultImage').src = `data:image/png;base64,${result.image}`;
+        }
+
+        function displayResult(result) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<h2>Skin Tone: ${result.skin_tone}</h2>`;
+
+            const colorCombinationsDiv = document.getElementById('colorCombinations');
+            colorCombinationsDiv.innerHTML = '<h3>Suggested Color Combinations:</h3>';
+            result.color_combinations.forEach(color => {
+                const colorBox = document.createElement('div');
+                colorBox.className = 'color-box';
+                colorBox.style.backgroundColor = color;
+                colorBox.title = color;
+                colorCombinationsDiv.appendChild(colorBox);
+            });
+
+            document.getElementById('imagePreview').src = `data:image/png;base64,${result.image}`;
+        }
+    </script>
+</body>
+</html>
