@@ -1,0 +1,2 @@
+"\"i want to build an app which shows me on which colors will suit on different skin tones, it should have the ability to upload a pic of someone and then it shows which color combinations would suit on them, it should also have the ability to change the skin tone of the uploaded picture\""
+
