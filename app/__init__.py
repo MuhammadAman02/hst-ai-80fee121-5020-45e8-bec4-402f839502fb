@@ -1,89 +1,107 @@
-import os
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile, HTTPException, Request, Form
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from dotenv import load_dotenv
+import cv2
+import numpy as np
+from skimage import color
+from PIL import Image
+import io
+import base64
+import os
 
-# Load environment variables from .env file
-load_dotenv()
-
-# Import core components
-from .core.config import settings
-from .core.logging_config import get_logger
-from .core.error_handling import register_exception_handlers
-
-# Initialize main application logger
-logger = get_logger(__name__)
-
-app = FastAPI(
-    title=settings.APP_NAME, # Use setting for title
-    description="Enterprise-ready FastAPI application base.",
-    version="1.0.0",
-    debug=settings.DEBUG, # Use setting for debug mode
-    # Add other FastAPI parameters if needed, e.g., lifespan context managers for DB connections
-)
+app = FastAPI()
 
 # Mount static files directory
-# Check both app/static and project root static directories
-static_dir_in_app = os.path.join(os.path.dirname(__file__), 'static')
-static_dir_in_root = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static')
-
-# First try to use the static directory inside the app directory
-if os.path.exists(static_dir_in_app) and os.listdir(static_dir_in_app):
-    app.mount("/static", StaticFiles(directory=static_dir_in_app), name="static")
-    logger.info(f"Using static directory at {static_dir_in_app}")
-# If not found or empty, try the project root static directory
-elif os.path.exists(static_dir_in_root) and os.listdir(static_dir_in_root):
-    app.mount("/static", StaticFiles(directory=static_dir_in_root), name="static")
-    logger.info(f"Using static directory at {static_dir_in_root}")
-else:
-    logger.warning(f"No static files found in {static_dir_in_app} or {static_dir_in_root}")
+static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # Configure Jinja2 templates
-# Check both app/templates and project root templates directories
-templates_dir_in_app = os.path.join(os.path.dirname(__file__), 'templates')
-templates_dir_in_root = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'templates')
+templates_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
+templates = Jinja2Templates(directory=templates_dir)
 
-# First try to use the templates directory inside the app directory
-if os.path.exists(templates_dir_in_app) and os.listdir(templates_dir_in_app):
-    templates = Jinja2Templates(directory=templates_dir_in_app)
-    logger.info(f"Using templates directory at {templates_dir_in_app}")
-# If not found or empty, try the project root templates directory
-elif os.path.exists(templates_dir_in_root) and os.listdir(templates_dir_in_root):
-    templates = Jinja2Templates(directory=templates_dir_in_root)
-    logger.info(f"Using templates directory at {templates_dir_in_root}")
-else:
-    templates = None
-    logger.warning(f"No templates found in {templates_dir_in_app} or {templates_dir_in_root}")
+@app.get("/", response_class=HTMLResponse)
+async def read_root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
-# Import and include routers after app creation
+@app.post("/analyze")
+async def analyze_image(file: UploadFile = File(...)):
+    contents = await file.read()
+    nparr = np.frombuffer(contents, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    
+    # Convert to LAB color space
+    lab_image = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+    
+    # Extract the L channel
+    l_channel = lab_image[:,:,0]
+    
+    # Calculate average skin tone
+    avg_skin_tone = np.mean(l_channel)
+    
+    # Determine skin tone category
+    if avg_skin_tone < 50:
+        skin_tone = "Dark"
+    elif avg_skin_tone < 120:
+        skin_tone = "Medium"
+    else:
+        skin_tone = "Light"
+    
+    # Suggest color combinations based on skin tone
+    color_combinations = get_color_combinations(skin_tone)
+    
+    # Convert image to base64 for display
+    img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    buffered = io.BytesIO()
+    img_pil.save(buffered, format="PNG")
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    
+    return {
+        "skin_tone": skin_tone,
+        "color_combinations": color_combinations,
+        "image": img_str
+    }
+
+@app.post("/change_skin_tone")
+async def change_skin_tone(file: UploadFile = File(...), new_tone: str = Form(...)):
+    contents = await file.read()
+    nparr = np.frombuffer(contents, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    
+    # Convert to LAB color space
+    lab_image = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+    
+    # Adjust L channel based on new_tone
+    l_channel = lab_image[:,:,0]
+    if new_tone == "darker":
+        l_channel = np.clip(l_channel - 20, 0, 255)
+    elif new_tone == "lighter":
+        l_channel = np.clip(l_channel + 20, 0, 255)
+    
+    lab_image[:,:,0] = l_channel
+    
+    # Convert back to BGR
+    modified_img = cv2.cvtColor(lab_image, cv2.COLOR_LAB2BGR)
+    
+    # Convert image to base64 for display
+    img_pil = Image.fromarray(cv2.cvtColor(modified_img, cv2.COLOR_BGR2RGB))
+    buffered = io.BytesIO()
+    img_pil.save(buffered, format="PNG")
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    
+    return {"image": img_str}
+
+def get_color_combinations(skin_tone):
+    combinations = {
+        "Dark": ["Gold", "Orange", "Red", "Pink", "Purple"],
+        "Medium": ["Blue", "Green", "Purple", "Red", "Orange"],
+        "Light": ["Navy", "Burgundy", "Forest Green", "Lavender", "Pastel Pink"]
+    }
+    return combinations.get(skin_tone, [])
+
+# Include routers
 from .api import routes as api_routes
 from .frontend import routes as frontend_routes
 
-# Include routers
 app.include_router(api_routes.router, prefix="/api", tags=["api"])
 app.include_router(frontend_routes.router, tags=["frontend"])
-
-# Note: The application is designed to be extensible.
-# When AI-generated code is added, it can be placed in the 'generated' directory
-# and imported here with its own router.
-
-# Register custom exception handlers
-register_exception_handlers(app)
-
-# Add root endpoint (optional)
-@app.get("/")
-async def read_root():
-    logger.info("Root endpoint accessed.")
-    return {"message": "Welcome to the FastAPI application!"}
-
-# --- Startup and Shutdown Events ---
-@app.on_event("startup")
-async def startup_event():
-    logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION} ({settings.APP_ENV})")
-    # Add any startup tasks here (database connections, etc.)
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    logger.info(f"Shutting down {settings.APP_NAME}")
-    # Add any cleanup tasks here
